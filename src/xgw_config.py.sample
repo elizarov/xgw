@@ -1,0 +1,9 @@
+
+class Config(object):
+    def __init__(self):
+        self.HOST = "<host-name>"
+        self.DATA_PATH = "/data.csv"
+        self.MESSAGE_PATH = "/message.csv"
+        self.AUTH = dict(Authenticate="basic <base64-user-colon-password>")
+
+CONFIG = Config()

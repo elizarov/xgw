@@ -1,25 +1,38 @@
 """xgw main logic module."""
 
 import rci
+from xgw_xbee_map import Resolver
 from xgw_xbee import XBee
 from xgw_controller import Controller
-from xgw_xml_parser import Parser
+from xgw_dispatcher import Dispatcher
+from xgw_uploader import Uploader
 
 RCI_CALLBACK_NAME = "xgw"
 
+print "xgw: Creating XBee name resolver"
+resolver = Resolver()
+
 print "xgw: Creating XBee connection"
-xbee = XBee()
+xbee = XBee(resolver)
+
+print "xgw: Creating HTTP uploader"
+uploader = Uploader(xbee)
 
 print "xgw: Creating controller"
-controller = Controller(xbee)
+controller = Controller(xbee, uploader)
 
-print "xgw: Creating parser"
-parser = Parser(controller)
+print "xgw: Creating dispatcher"
+dispatcher = Dispatcher(controller)
 
-print "xgw: Starting XBee thread"
+print "xgw: Starting XBee name resolver thread"
+resolver.start()
+
+print "xgw: Starting XBee conection thread"
 xbee.start()
 
-print "xgw: Registering RCI callback ", RCI_CALLBACK_NAME
-rci.add_rci_callback(RCI_CALLBACK_NAME, parser.parse)
-controller.quit() # if terminating
+print "xgw: Starting HTTP uploader thread"
+uploader.start()
 
+print "xgw: Registering RCI callback ", RCI_CALLBACK_NAME
+rci.add_rci_callback(RCI_CALLBACK_NAME, dispatcher.callback)
+controller.quit() # if terminating
