@@ -213,7 +213,7 @@ class Data(object):
         return Element("d", dict(tag=self.tag, time=fmt_time(self.time), node=self.node), [self.value])
     
     def csv(self, now):
-        return self.tag + "," + str(self.value) + "," + str(self.time - now)
+        return self.tag + "," + str(self.value) + "," + str(int(self.time - now)) + "s"
 
 class Message(object):
     def __init__(self, message, time, node, index):
@@ -233,4 +233,4 @@ class Message(object):
         return Element("m", dict(time=fmt_time(self.time), node=self.node), [self.message])
     
     def csv(self, now):
-        return "1," + self.message + "," + str(self.time - now) + "," + str(self.index)
+        return "1," + self.message + "," + str(int(self.time - now)) + "s," + str(self.index)
