@@ -1,6 +1,6 @@
 
-from threading import Thread
 from time import sleep, time
+from xgw_worker import Worker
 from xgw_data import CURRENT
 from xgw_config import CONFIG
 
@@ -12,49 +12,43 @@ FETCH_MESSAGES_PERIOD = 60   # 1 minute
 UPLOAD_DATA_PERIOD = 5 * 60  # 5 minutes
 RETRY_PERIOD =  60           # 1 minute
 
-class Uploader(Thread):
+class Uploader(Worker):
     def __init__(self, xbee):
-        Thread.__init__(self, name="Uploader")
+        Worker.__init__(self, name="Uploader")
         self._xbee = xbee
         self._messages_session = None
         self._last_message_index = None
-        self._closed = False
-
-    def close(self):
-        self._closed = True
-        self.join()
-
-    def run(self):
         now = time()
-        next_data_time = now + RETRY_PERIOD
-        next_messages_time = now 
-        while not self._closed:
-            sleep(SLEEP_PERIOD)
-            # upload / fetch messages
-            now = time()
-            if CURRENT.urgent or now > next_messages_time or self._last_message_index:
-                CURRENT.urgent = False
-                success = self._uploadMessages(list(CURRENT.messages)) 
-                if not success:
-                    CURRENT.urgent = True
-                next_messages_time = now + FETCH_MESSAGES_PERIOD
-            # upload urgent data        
-            if CURRENT.urgent_data:
-                data = CURRENT.urgent_data
-                CURRENT.urgent_data = {}        
-                success = self._uploadData(data.values())
-                if not success:
-                    for (k, v) in data.iteritems():
-                        if not v.sent and k not in CURRENT.urgent_data:
-                            CURRENT.urgent_data[k] = v
-            # upload regular (scheduled) data                
-            now = time()
-            if now > next_data_time:
-                success = self._uploadData(CURRENT.data.values())
-                if success:
-                    next_data_time = now + UPLOAD_DATA_PERIOD 
-                else:
-                    next_data_time = now + RETRY_PERIOD
+        self._next_data_time = now + RETRY_PERIOD
+        self._next_messages_time = now 
+
+    def work(self):
+        sleep(SLEEP_PERIOD)
+        # upload / fetch messages
+        now = time()
+        if CURRENT.urgent or now > self._next_messages_time or self._last_message_index:
+            CURRENT.urgent = False
+            success = self._uploadMessages(list(CURRENT.messages)) 
+            if not success:
+                CURRENT.urgent = True
+            self._next_messages_time = now + FETCH_MESSAGES_PERIOD
+        # upload urgent data        
+        if CURRENT.urgent_data:
+            data = CURRENT.urgent_data
+            CURRENT.urgent_data = {}        
+            success = self._uploadData(data.values())
+            if not success:
+                for (k, v) in data.iteritems():
+                    if not v.sent and k not in CURRENT.urgent_data:
+                        CURRENT.urgent_data[k] = v
+        # upload regular (scheduled) data                
+        now = time()
+        if now > self._next_data_time:
+            success = self._uploadData(CURRENT.data.values())
+            if success:
+                self._next_data_time = now + UPLOAD_DATA_PERIOD 
+            else:
+                self._next_data_time = now + RETRY_PERIOD
             
     def _uploadMessages(self, msg_values):
         msgs = []

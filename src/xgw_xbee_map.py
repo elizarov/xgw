@@ -2,7 +2,7 @@
 
 import zigbee
 from Queue import Queue, Empty, Full
-from threading import Thread
+from xgw_worker import Worker
 from libs.xbeeprodid import GetXBeeDeviceType, XBeeUnspecified
 
 #---- Constant defs ----
@@ -70,6 +70,10 @@ def get_addr_from_tuple(addr):
         return addr[0]
     return addr
     
+def str2addr(a):
+    return "[" + ":".join([hex(ord(ch)).replace('0x', '').zfill(2) 
+                           for ch in a]) + "]!"        
+    
 def to_addr(name):
     """Resolves an address or name string into an address."""
     if is_addr(name):
@@ -89,8 +93,7 @@ def to_addr(name):
             break
     if not a:
         return name
-    addr = "[" + ":".join([hex(ord(ch)).replace('0x', '').zfill(2) 
-                           for ch in a[2:]]) + "]!"
+    addr = str2addr(a[2:])
     print "xgw: Discovered ", addr, " for ", name
     map_write(name, addr)
     return addr     
@@ -127,29 +130,23 @@ def to_name(addr, get_device_type=False):
 
 #---- Background lazy resolver thread
 
-class Resolver(Thread):
+class Resolver(Worker):
     def __init__(self):
-        Thread.__init__(self, name="Resolver")
-        self._closed = False
+        Worker.__init__(self, name="Resolver")
         self._resolve_name = set()
         self._resolve_device_type = set()
         self._queue = Queue(MAX_QUEUE)
         
-    def close(self):
-        self._closed = True
-        self.join()
-        
-    def run(self):
-        while not self._closed:
-            try: 
-                addr = self._queue.get(True, 1) # block for at most 1 sec for ability to close it
-                get_device_type = addr in self._resolve_device_type
-                to_name(addr, get_device_type)
-                self._resolve_name.remove(addr)
-                if get_device_type:
-                    self._resolve_device_type.remove(addr)
-            except Empty:
-                pass # loop
+    def work(self):
+        try: 
+            addr = self._queue.get(True, 1) # block for at most 1 sec for ability to close it
+            get_device_type = addr in self._resolve_device_type
+            to_name(addr, get_device_type)
+            self._resolve_name.remove(addr)
+            if get_device_type:
+                self._resolve_device_type.remove(addr)
+        except Empty:
+            pass # empty queue - Ok
         
     def to_name_non_blocking(self, addr, get_device_type=False):    
         """Returns a name for a given name or address string (non-blocking)."""
