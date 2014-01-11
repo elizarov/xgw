@@ -35,4 +35,17 @@ uploader.start()
 
 print "xgw: Registering RCI callback ", RCI_CALLBACK_NAME
 rci.add_rci_callback(RCI_CALLBACK_NAME, dispatcher.callback)
-controller.quit() # if terminating
+
+ # --- terminating ---
+ 
+print "xgw: Stopping HTTP uploader thread"
+uploader.close()
+
+print "xgw: Stopping XBee conection thread"
+xbee.close()
+
+print "xgw: Stopping XBee name resolver thread"
+resolver.close()
+
+print "xgw: Terminating"
+sys.exit()

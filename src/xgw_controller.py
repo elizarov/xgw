@@ -8,11 +8,6 @@ class Controller:
         self._xbee = xbee
         self._uploader = uploader
         
-    def quit(self):
-        self._xbee.close()
-        self._uploader.close()
-        sys.exit()
-        
     def send(self, data, **args):
         self._xbee.send(unescape(data), **args)
         return "Sent: " + data

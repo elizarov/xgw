@@ -30,7 +30,6 @@ class XBee(Thread):
         self._buf = {} # node -> messages
     
     def close(self):
-        self._resolver.close()
         self._closed = True
         self._sock.close()
         self.join()
