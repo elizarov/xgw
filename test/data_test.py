@@ -5,8 +5,10 @@ updateDataLine("BOILER", "[B: s3 t75 a0007 b0007 c0122 d0691 u01013245]o*\r\n")
 updateDataLine("WEATHER", "[4:  22.5 38%    ]\r\n")
 updateDataLine("WEATHER", "[P:  24.0 1005.1 ]\r\n")
 updateDataLine("WEATHER", "[W:  12  11 SSE  ]\r\n")
+updateDataLine("NODE2", "[E1:  806 v229 a 3.7]\r\n")
 
-print CURRENT.data
+for k in CURRENT.data:
+    print k, CURRENT.data[k]
 
 assert 1 == CURRENT.data["DC"].value
 assert 23.8 == CURRENT.data["DCs1"].value
@@ -23,3 +25,7 @@ assert 1005.1 == CURRENT.data["DP1"].value
 
 assert 12 == CURRENT.data["DW"].value
 assert 11 == CURRENT.data["DW1"].value
+
+assert 806 == CURRENT.data["DE1"].value
+assert 229 == CURRENT.data["DE1v"].value
+assert 3.7 == CURRENT.data["DE1a"].value

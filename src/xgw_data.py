@@ -6,15 +6,16 @@ from time_util import fmt_time
 
 TAG_PREFIX = "D"
 
-STATE_OUT            = 0
-STATE_MAIN_TAG       = 1
-STATE_VALUE_OR_TAG_0 = 2
-STATE_VALUE_OR_TAG   = 3
-STATE_TAG_OVER       = 4
-STATE_VALUE_0        = 5
-STATE_VALUE          = 6
-STATE_VALUE_FRAC     = 7
-STATE_0D             = 8
+STATE_OUT              = 0
+STATE_MAIN_TAG         = 1
+STATE_VALUE_OR_TAG_0   = 2
+STATE_VALUE_OR_TAG     = 3
+STATE_VALUE_LEAD_SPACE = 4
+STATE_TAG_OVER         = 5
+STATE_VALUE_0          = 6
+STATE_VALUE            = 7
+STATE_VALUE_FRAC       = 8
+STATE_0D               = 9
 
 class Current:
     def __init__(self):
@@ -140,8 +141,15 @@ class Parser(object):
             elif self._state == STATE_VALUE_OR_TAG:
                 if isValueTagChar(c):
                     self._value_tag += c
+                elif (len(self._value_tag) > 0 and c == ' '):
+                    self._state = STATE_VALUE_LEAD_SPACE
                 else:
                     self._process_tag_over(c)
+            elif self._state == STATE_VALUE_LEAD_SPACE:
+                if (c == ' '):
+                    pass # skipping more leading spaces
+                else:        
+                    self._process_tag_over(c, STATE_VALUE_OR_TAG_0)
             elif self._state == STATE_TAG_OVER:
                 self._process_tag_over(c)
             elif self._state == STATE_VALUE_0:
